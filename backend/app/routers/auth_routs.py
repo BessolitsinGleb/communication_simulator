@@ -12,7 +12,7 @@ from ..core.sequrity import verify_password, create_jwt_token, generate_code
 from sqlalchemy import select, delete
 from ..models import Users, EmailCode
 from datetime import datetime, timedelta
-from ..services.mail_service import send_email_code
+from ..services.mail_service import deliver_code
 
 router = APIRouter(prefix="/reg", tags=["/reg"])
 
@@ -117,8 +117,6 @@ async def resend_code(data: ResendCodeSchema, db: AsyncSession = Depends(get_db)
     if not user or user.email_verified:
         raise HTTPException(400, "Пользователь не найден или почта уже подтверждена")
 
-    r.set(cooldown_key, 1, ex=60)
-    r.delete(f"verify_attempts:{email}")
     code = generate_code()
 
     email_code = EmailCode(
@@ -127,8 +125,19 @@ async def resend_code(data: ResendCodeSchema, db: AsyncSession = Depends(get_db)
         expires_at=datetime.utcnow() + timedelta(minutes=10)
     )
     db.add(email_code)
+    # FIX: письмо отправляется ДО коммита и через deliver_code (поток + таймаут). Раньше синхронный smtplib
+    # подвешивал весь сервер, а при ошибке код уже лежал в БД и клиент получал 500.
+    try:
+        await db.flush()
+        await deliver_code(email, code)
+    except Exception:
+        await db.rollback()
+        raise
     await db.commit()
-    send_email_code(email, code)
+
+    # Кулдаун и сброс попыток только после успешной отправки, иначе сбой SMTP блокировал бы повтор на минуту.
+    r.set(cooldown_key, 1, ex=60)
+    r.delete(f"verify_attempts:{email}")
 
     return {"message": "Код отправлен повторно"}
 

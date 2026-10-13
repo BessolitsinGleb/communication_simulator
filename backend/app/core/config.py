@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     REDIS_TTL: int
     REDIS_URL: str
     DIALOG_LEN_BEFORE_SUM: int = 6
+    # ADDED: режим разработки. Если письмо с кодом не удалось отправить, код пишется в лог сервера,
+    # а не возвращается ошибка (см. services/mail_service.deliver_code). В проде должно быть false.
+    EMAIL_FALLBACK_TO_LOG: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env", 

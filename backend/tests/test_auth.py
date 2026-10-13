@@ -47,8 +47,8 @@ def test_login_unknown_email(client):
     assert login(client, email="nobody@test.ru").status_code == 401
 
 
-def test_duplicate_email(client, sent_codes):
-    assert register(client).status_code == 200
+def test_duplicate_email(client, user):
+    # занятым считается только ПОДТВЕРЖДЁННЫЙ email (неподтверждённый можно перерегистрировать)
     res = register(client, username="other")
     assert res.status_code == 400
     assert res.json()["detail"] == "Email уже существует"
@@ -171,3 +171,56 @@ def test_me_deleted_user(client):
     token = jwt.encode({"sub": "999", "exp": datetime.utcnow() + timedelta(minutes=5)},
                        s.SECRET_KEY, algorithm=s.JWT_ALGO)
     assert client.get("/reg/me", headers=auth_headers(token)).status_code == 401
+
+
+# ---------- недоступный SMTP (реальный случай: провайдер блокирует smtp.gmail.com) ----------
+
+import smtplib  # noqa: E402
+import app.services.mail_service as mail_service  # noqa: E402
+
+
+def _smtp_down(email, code):
+    raise smtplib.SMTPServerDisconnected("Connection unexpectedly closed")
+
+
+def test_register_smtp_down_returns_503_and_rolls_back(client, sent_codes, monkeypatch):
+    monkeypatch.setattr(mail_service, "send_email_code", _smtp_down)
+    res = register(client)
+    assert res.status_code == 503
+    assert res.json()["detail"] == "Не удалось отправить письмо с кодом. Попробуйте позже"
+    # пользователь не остался «висеть» в БД: после починки почты регистрация проходит
+    monkeypatch.setattr(mail_service, "send_email_code", lambda e, c: sent_codes.__setitem__(e, c))
+    assert register(client).status_code == 200
+
+
+def test_register_smtp_down_fallback_to_log(client, monkeypatch, capsys):
+    monkeypatch.setattr(mail_service, "send_email_code", _smtp_down)
+    monkeypatch.setattr(mail_service.s, "EMAIL_FALLBACK_TO_LOG", True)
+    assert register(client).status_code == 200
+    out = capsys.readouterr().out
+    code = out.split("ivan@test.ru: ")[1].split()[0]
+    assert client.post("/reg/verify_email", json={"email": "ivan@test.ru", "code": code}).status_code == 200
+
+
+def test_resend_smtp_down_no_cooldown(client, sent_codes, monkeypatch):
+    register(client)
+    monkeypatch.setattr(mail_service, "send_email_code", _smtp_down)
+    assert client.post("/reg/resend_code", json={"email": "ivan@test.ru"}).status_code == 503
+    monkeypatch.setattr(mail_service, "send_email_code", lambda e, c: sent_codes.__setitem__(e, c))
+    assert client.post("/reg/resend_code", json={"email": "ivan@test.ru"}).status_code == 200
+
+
+def test_reregister_unverified_email(client, sent_codes):
+    register(client, password="oldpass1")
+    res = register(client, username="ivan2", password="newpass1")
+    assert res.status_code == 200
+    code = sent_codes["ivan@test.ru"]
+    assert client.post("/reg/verify_email", json={"email": "ivan@test.ru", "code": code}).status_code == 200
+    assert login(client, password="newpass1").status_code == 200
+    assert login(client, password="oldpass1").status_code == 401
+
+
+def test_cannot_reregister_verified_email(client, user):
+    res = register(client, username="hacker", password="hacked12")
+    assert res.status_code == 400
+    assert login(client, password="hacked12").status_code == 401

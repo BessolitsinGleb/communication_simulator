@@ -52,7 +52,7 @@ import app.routers.auth_routs as auth_routs  # noqa: E402
 import app.routers.audio_rout as audio_rout  # noqa: E402
 import app.routers.text_routs as text_routs  # noqa: E402
 import app.repositories.dialog_repos as dialog_repos  # noqa: E402
-import app.services.auth_service as auth_service  # noqa: E402
+import app.services.mail_service as mail_service  # noqa: E402
 
 
 async def _no_rate_limit():
@@ -85,8 +85,7 @@ def sent_codes(monkeypatch):
     """Перехватывает письма с кодом: {email: последний код}."""
     codes = {}
     fake = lambda email, code: codes.__setitem__(email, code)
-    monkeypatch.setattr(auth_service, "send_email_code", fake)
-    monkeypatch.setattr(auth_routs, "send_email_code", fake)
+    monkeypatch.setattr(mail_service, "send_email_code", fake)
     return codes
 
 

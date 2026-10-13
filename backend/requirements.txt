@@ -1,3 +1,6 @@
+# FIX: openai-whisper тянет torch, по умолчанию с CUDA (~5 ГБ пакетов nvidia). На Mac/CPU это не нужно,
+# а сборка Docker-образа падала с "No space left on device". CPU-сборка torch в разы меньше.
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi[standard]
 httpx
 pydantic
