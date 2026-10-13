@@ -14,7 +14,10 @@ class Users(Base):
     email: Mapped[str] = mapped_column(unique=True, nullable=True)
     email_verified: Mapped[bool] = mapped_column(default= False)
     password: Mapped[str] = mapped_column()
-    choosen_voice: Mapped[str] = mapped_column()
+    # FIX: колонка была NOT NULL без значения по умолчанию, а при регистрации голос ещё не выбран,
+    # поэтому INSERT нового пользователя падал с IntegrityError и регистрация не работала.
+    # Для уже существующей БД: ALTER TABLE users ALTER COLUMN choosen_voice DROP NOT NULL;
+    choosen_voice: Mapped[str | None] = mapped_column(nullable=True, default=None)
 
 class EmailCode(Base):
     __tablename__ = "email_codes"

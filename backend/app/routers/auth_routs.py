@@ -1,20 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from ..schemas.auth_schema import UserReg, VerifyEmailschema
+from ..schemas.auth_schema import UserReg, VerifyEmailschema, ResendCodeSchema
 from ..services.auth_service import AuthService
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, rate_limiter
+from ..core.utilits import r
+from ..core.config import VERIFY_MAX_ATTEMPTS, VERIFY_ATTEMPTS_WINDOW_SEC
 from ..database import get_db
 from ..schemas.auth_schema import UserResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.sequrity import verify_password, create_jwt_token, generate_code
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from ..models import Users, EmailCode
 from datetime import datetime, timedelta
 from ..services.mail_service import send_email_code
 
 router = APIRouter(prefix="/reg", tags=["/reg"])
 
-@router.post("/regis") #, response_model= TokenResp)
+# FIX: на регистрацию, логин, подтверждение и повторную отправку кода добавлен rate_limiter.
+# Раньше подбор пароля и кода, а также спам письмами ничем не ограничивались.
+@router.post("/regis", dependencies=[Depends(rate_limiter)]) #, response_model= TokenResp)
 async def register(
     user: UserReg,
     db: AsyncSession = Depends(get_db)
@@ -23,7 +27,9 @@ async def register(
     await service.register(user)
     return {"message": "код отправлен на почту"}
 
-@router.post("/login")
+# Логин принимает OAuth2-форму (username = email). Так работает кнопка Authorize в Swagger,
+# поэтому формат на фронте (api.js) приведён к form-urlencoded, а не наоборот.
+@router.post("/login", dependencies=[Depends(rate_limiter)])
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(), 
     db: AsyncSession = Depends(get_db)
@@ -48,11 +54,21 @@ async def login(
         "token_type": "bearer"
     }
 
-@router.post("/verify_email")
+@router.post("/verify_email", dependencies=[Depends(rate_limiter)])
 async def verify_email(data: VerifyEmailschema, db: AsyncSession = Depends(get_db)):
 
+    # FIX: код из 6 цифр можно было перебирать без ограничений. Теперь не больше VERIFY_MAX_ATTEMPTS
+    # попыток на email за VERIFY_ATTEMPTS_WINDOW_SEC (счётчик сбрасывается при повторной отправке кода).
+    attempts_key = f"verify_attempts:{data.email}"
+    attempts = r.incr(attempts_key)
+    if attempts == 1:
+        r.expire(attempts_key, VERIFY_ATTEMPTS_WINDOW_SEC)
+    if attempts > VERIFY_MAX_ATTEMPTS:
+        raise HTTPException(429, "Слишком много попыток, запросите новый код")
+
+    # FIX: без ORDER BY all_codes[-1] не гарантированно был последним выданным кодом.
     result = await db.execute(
-        select(EmailCode).where(EmailCode.email == data.email)
+        select(EmailCode).where(EmailCode.email == data.email).order_by(EmailCode.id)
     )
 
     all_codes = result.scalars().all()
@@ -71,16 +87,38 @@ async def verify_email(data: VerifyEmailschema, db: AsyncSession = Depends(get_d
         select(Users).where(Users.email == data.email)
     )
 
-    user = result.scalar_one()
+    # FIX: scalar_one() падал с 500, если кода нет в users (например, пользователь удалён).
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(400, "Пользователь не найден")
 
     user.email_verified = True
+    # FIX: использованные коды раньше не удалялись, и тем же кодом можно было подтверждать повторно.
+    await db.execute(delete(EmailCode).where(EmailCode.email == data.email))
 
     await db.commit()
+    r.delete(attempts_key)
 
     return {"message": "Почта подтверждена"}
 
-@router.post("/resend_code")
-async def resend_code(email: str, db: AsyncSession = Depends(get_db)):
+@router.post("/resend_code", dependencies=[Depends(rate_limiter)])
+async def resend_code(data: ResendCodeSchema, db: AsyncSession = Depends(get_db)):
+    # FIX: email раньше ожидался в query-параметре, а фронт шлёт JSON {"email": ...} → 422.
+    email = data.email
+
+    # FIX: раньше код отправлялся на ЛЮБОЙ адрес без ограничений (сервер можно было использовать для спама).
+    # Теперь письмо уходит только зарегистрированному пользователю с неподтверждённой почтой и не чаще раза в минуту.
+    cooldown_key = f"resend_cooldown:{email}"
+    if r.exists(cooldown_key):
+        raise HTTPException(429, "Код можно запросить повторно через минуту")
+
+    result = await db.execute(select(Users).where(Users.email == email))
+    user = result.scalar_one_or_none()
+    if not user or user.email_verified:
+        raise HTTPException(400, "Пользователь не найден или почта уже подтверждена")
+
+    r.set(cooldown_key, 1, ex=60)
+    r.delete(f"verify_attempts:{email}")
     code = generate_code()
 
     email_code = EmailCode(
@@ -95,17 +133,6 @@ async def resend_code(email: str, db: AsyncSession = Depends(get_db)):
     return {"message": "Код отправлен повторно"}
 
 @router.get("/me", response_model= UserResponse)
-async def me(current_user: Users = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    query = (
-        select(Users)
-        .where(Users.user_id == current_user.user_id))
-    result = await db.execute(query)
-    user = result.scalar_one_or_none()
-    
-    if not user:
-        raise HTTPException(
-            status_code= status.HTTP_401_UNAUTHORIZED,
-            detail="user not found or token is invalid"
-        )
-
-    return user
+async def me(current_user: Users = Depends(get_current_user)):
+    # FIX: убран повторный SELECT. get_current_user уже загрузил пользователя и сам отдаёт 401, если его нет.
+    return current_user

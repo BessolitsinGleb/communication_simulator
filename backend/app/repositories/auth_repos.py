@@ -1,3 +1,6 @@
+# NOTE: мёртвый код, нигде не импортируется. Использует синхронный self.db.query(...) с AsyncSession
+# и несуществующие self.db/self.security, поэтому работать не будет. Логин реализован в routers/auth_routs.py.
+# Оставлено без изменений, можно удалить.
 from ..models import Users
 from fastapi import HTTPException
 from ..core.sequrity import create_jwt_token

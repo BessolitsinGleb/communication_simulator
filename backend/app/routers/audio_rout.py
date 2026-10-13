@@ -1,152 +1,138 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
-from ..repositories.openrout_repos import send_to_ai, uploading_from_mp3, get_file_path, speak, choose_level, choose_ttl
+from fastapi.concurrency import run_in_threadpool
+from starlette.background import BackgroundTask
+from ..repositories.openrout_repos import send_to_ai, uploading_from_mp3, get_file_path, speak, choose_level
 from ..repositories.dialog_repos import SummarizedConversationMemory
-from ..dependencies import rate_limiter, get_session_id, get_current_user, get_voice
+from ..dependencies import rate_limiter, get_session_id, get_current_user, get_voice, session_key
 from ..core.config import UDLOADING_DIR
-from ..core.utilits import r
-import traceback, os, json
+from ..schemas.auth_schema import ChooseVoiceSchema, LevelLiteral, ModeLiteral
+from ..services import session_service as sessions
+import traceback, os
 from urllib.parse import quote
-from datetime import datetime
-from ..models import Users, DialogHistory
+from ..models import Users
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
 from ..database import get_db
 
 router = APIRouter(prefix='/dialog', tags=['/dialog'])
 
+TIMEOUT_RESPONSE = {"text_to_speak": "Время вышло! Вы не успели завершить диалог.",
+                    "status": "timeout", "end_call": True}
+
+# ADDED: ограничение размера загружаемой записи (10 МБ ≈ несколько минут речи). Без него можно было
+# забить диск и память сервера одним запросом.
+MAX_AUDIO_BYTES = 10 * 1024 * 1024
+
+def _remove_file(path: str) -> None:
+    if os.path.exists(path):
+        os.remove(path)
+
 @router.post("/process_turn/{session_id}", dependencies=[Depends(rate_limiter)])
-async def process_turn(level: str,
-                       mode: str,
+async def process_turn(level: LevelLiteral = Form(...),
+                       mode: ModeLiteral = Form(...),
                        session_id: str = Depends(get_session_id),
                        file: UploadFile = File(...),
-                       current_user: Users = Depends(get_current_user)):
-    sid = session_id
-    sys_prompt = choose_level(level)
-    current_ttl = choose_ttl(mode)
-    voice = get_voice()
-    memory = SummarizedConversationMemory(system_prompt=sys_prompt, user_id=sid)
-    file_path = get_file_path(session_id)
+                       current_user: Users = Depends(get_current_user),
+                       voice: str = Depends(get_voice),
+                       db: AsyncSession = Depends(get_db)):
+    # FIX: level/mode раньше ожидались в query, а фронт кладёт их в multipart FormData → 422.
+    # FIX: voice раньше получался вызовом get_voice() напрямую. Это корутина без await и без зависимостей,
+    #      поэтому голос никогда не определялся. Теперь get_voice подключается через Depends.
+    # FIX: session_id подменялся на user_id; логика TTL/таймаута/сохранения вынесена в session_service.
+    key = session_key(current_user, session_id)
 
-    redis_key = f"full_dialog:{sid}"
-    level_key = f"level:{sid}" 
+    state, session_data = sessions.load_or_start(key, level, mode)
+    if state == sessions.CLOSED:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="Сессия уже завершена, начните новый звонок")
+    if state == sessions.TIMEOUT:
+        await sessions.finalize(db, current_user.user_id, key)
+        return TIMEOUT_RESPONSE
 
-    get_level = r.get(level_key)
-    session_raw = r.get(redis_key)
-
-    if get_level and not session_raw:
-        return {
-            "text_to_speak": "Время вышло! Вы не успели завершить диалог.", 
-            "status": "timeout", 
-            "end_call": True
-        }
-    
-    if session_raw and get_level:
-        session_data = json.loads(session_raw)
-        
-        remaining_ttl = r.ttl(redis_key)
-        if remaining_ttl <= 0:
-            return {"text_to_speak": "Время вышло!", "status": "timeout", "end_call": True}
-        
-        current_ttl = remaining_ttl
-    else:
-        session_data = {
-            "created_at": datetime.utcnow().isoformat(),
-            "messages": []
-        }
-        r.setex(name=level_key, time=current_ttl, value=level)
+    memory = SummarizedConversationMemory(system_prompt=choose_level(session_data["level"]), user_id=key)
+    file_path = get_file_path(key)
 
     try:
+        content = await file.read()
+        if len(content) > MAX_AUDIO_BYTES:
+            raise HTTPException(413, detail="Слишком длинная запись")
+
         if not os.path.exists(UDLOADING_DIR):
             os.makedirs(UDLOADING_DIR)
         with open(file_path, "wb") as buffer:
-            content = await file.read()
             buffer.write(content)
-        text_said = uploading_from_mp3(file_path)       
+        try:
+            # FIX: whisper.transcribe синхронный и тяжёлый. Вызов прямо в async-эндпоинте блокировал
+            # event loop, и сервер переставал отвечать всем пользователям на время распознавания.
+            text_said = await run_in_threadpool(uploading_from_mp3, file_path)
+        finally:
+            # FIX: входная запись раньше оставалась на диске до close_session (или навсегда).
+            _remove_file(file_path)
+
         if not text_said:
             return {"text_to_speak": "", "status": "silence", "end_call": False}
 
-        memory.add_message("user", text_said)
+        await memory.add_message("user", text_said)
         session_data["messages"].append({"role": "me", "content": text_said})
 
         current_context = memory.get_messages_for_llm()
-        
+
         bot_response = await send_to_ai(current_context)
-        memory.add_message("assistant", bot_response)
+        await memory.add_message("assistant", bot_response)
         session_data["messages"].append({"role": "client", "content": bot_response})
-        
-        if "всего доброго" in bot_response.lower() or "до свидания" in bot_response.lower():
-            memory.clear_all_data()
-            r.delete(redis_key, level_key)
+        sessions.save(key, session_data)
+
+        if sessions.is_goodbye(bot_response):
+            # FIX: раньше при завершении история в БД не сохранялась.
+            await sessions.finalize(db, current_user.user_id, key)
             return {"text_to_speak": bot_response, "status": "success", "end_call": True}
-            
-        audio_path = await speak(bot_response, sid, voice)
+
+        audio_path = await speak(bot_response, key, voice)
         safe_bot_response = quote(bot_response)
 
-        r.setex(redis_key, remaining_ttl, json.dumps(session_data, ensure_ascii=False))
-        r.setex(level_key, remaining_ttl, level)
         return FileResponse(
-            path=audio_path, 
-            media_type="audio/mpeg", 
-            filename=f"response_{sid}.mp3",
-            headers={"X-Bot-Response": safe_bot_response} 
+            path=audio_path,
+            media_type="audio/mpeg",
+            filename=f"response_{session_id}.mp3",
+            headers={"X-Bot-Response": safe_bot_response},
+            # FIX: mp3-ответы раньше копились на диске. Теперь файл удаляется после отправки клиенту.
+            background=BackgroundTask(_remove_file, audio_path),
         )
 
-    except Exception as e:
+    except HTTPException:
+        raise
+    except Exception:
+        # FIX: traceback больше не отдаётся клиенту, только пишется в лог.
         traceback.print_exc()
-        raise HTTPException(status_code=500,
-                            detail=f"Ошибка в эндпоинте: {str(e)}, traceback: {traceback.format_exc()}")
-    
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера, попробуйте ещё раз")
+
 @router.delete("/close_session/{session_id}")
 async def close_session(session_id: str = Depends(get_session_id),
                         current_user: Users = Depends(get_current_user),
                         db: AsyncSession = Depends(get_db)):
-    redis_key = f"full_dialog:{session_id}"
-    level = r.get(f"level:{session_id}")
-    memory = SummarizedConversationMemory(user_id=session_id)
-    file_path = get_file_path(session_id)
-
-    session_raw = r.get(redis_key)
-    if not session_raw:
+    # FIX: раньше сессия считалась закрытой, только если на диске оставался файл записи. Он один на всех
+    # пользователей, поэтому история часто не сохранялась. Ещё level приходил как bytes, а user_id = session_id.
+    key = session_key(current_user, session_id)
+    if not sessions.exists(key):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Активная сессия не найдена или уже была закрыта"
         )
-        
-    session_data = json.loads(session_raw)
 
-    if (os.path.exists(file_path)) and (memory.clear_all_data()) and (session_data["messages"]):
-        os.remove(file_path)
-        new_archive_entry = DialogHistory(
-            user_id=session_id,
-            created_at=datetime.fromisoformat(session_data["created_at"]),
-            closed_at=datetime.utcnow(),
-            level=level,
-            messages_list=session_data["messages"]
-        )
-        db.add(new_archive_entry)
-        await db.commit()
-        r.delete(redis_key)
-        return {"status": "closed", "message": f"Сессия закрыта, файл удален, история сохранена"}
-    
-    return {"status": "Сессия не найдена или уже была удалена"}
+    _remove_file(get_file_path(key))
+    saved = await sessions.finalize(db, current_user.user_id, key)
+    message = "Сессия закрыта, история сохранена" if saved else "Сессия закрыта, сообщений не было"
+    return {"status": "closed", "message": message}
 
 @router.post('/choose_voice', dependencies=[Depends(rate_limiter)])
-async def choose_voice(voice,
+async def choose_voice(body: ChooseVoiceSchema,
                        current_user: Users = Depends(get_current_user),
                        db: AsyncSession = Depends(get_db)):
-
-    smtp = await db.execute(select(Users).where(Users.user_id == current_user.user_id))
-    user = smtp.scalar_one_or_none()
-
-    if not user:
-            raise HTTPException(
-                status_code= status.HTTP_401_UNAUTHORIZED,
-                detail="user not found or token is invalid"
-            )
-    update(user).values(choosen_voice = voice)
-
-    await db.execute(user)
+    # FIX: voice раньше ожидался в query, а фронт шлёт JSON {"voice": "man"|"woman"} → 422.
+    #      Теперь значение ещё и валидируется: раньше можно было сохранить любую строку и сломать process_turn.
+    # FIX: `update(user).values(...)` создавал выражение и выбрасывал его, а `db.execute(user)` с ORM-объектом
+    #      падал. Голос никогда не сохранялся. Теперь просто меняем атрибут и коммитим.
+    #      current_user загружен в той же сессии БД (FastAPI кэширует get_db в рамках запроса).
+    current_user.choosen_voice = body.voice
     await db.commit()
 
-    return {'status': "success", 'choosen_voice': voice}
+    return {'status': "success", 'choosen_voice': body.voice}

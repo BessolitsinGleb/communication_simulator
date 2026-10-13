@@ -55,7 +55,7 @@ async function extractErrorMessage(response) {
 
 async function request(
   path,
-  { method = "GET", json, formData, headers = {} } = {},
+  { method = "GET", json, formData, form, headers = {}, skipAuthRedirect = false } = {},
 ) {
   const finalHeaders = { ...authHeader(), ...headers };
   let body;
@@ -65,6 +65,9 @@ async function request(
     body = JSON.stringify(json);
   } else if (formData !== undefined) {
     body = formData; // Content-Type (с boundary) браузер выставит сам
+  } else if (form !== undefined) {
+    // application/x-www-form-urlencoded: так ждёт OAuth2PasswordRequestForm на /reg/login
+    body = new URLSearchParams(form);
   }
 
   let response;
@@ -79,6 +82,18 @@ async function request(
       "Не удалось связаться с сервером. Проверьте соединение.",
       0,
     );
+  }
+
+  // FIX: JWT живёт 30 минут. Раньше протухший токен посреди диалога давал только тост с ошибкой,
+  // и пользователь застревал на странице. Теперь токен удаляется и открывается страница входа.
+  // На /reg/login 401 означает «неверный пароль», поэтому там редирект отключён.
+  if (response.status === 401 && !skipAuthRedirect) {
+    TokenStorage.clear();
+    const onAuthPage = window.location.pathname.endsWith("auth.html");
+    if (!onAuthPage) {
+      const inPages = window.location.pathname.includes("/pages/");
+      window.location.href = inPages ? "auth.html" : "pages/auth.html";
+    }
   }
 
   if (!response.ok) {
@@ -101,10 +116,13 @@ const Api = {
     return response.json(); // { message }
   },
 
+  // FIX: backend принимает OAuth2PasswordRequestForm (form-urlencoded, поле username), а не JSON.
+  // Раньше логин всегда возвращал 422. Email передаётся в поле username.
   async login({ email, password }) {
     const response = await request("/reg/login", {
       method: "POST",
-      json: { email, password },
+      form: { username: email, password },
+      skipAuthRedirect: true,
     });
     return response.json(); // { access_token, token_type }
   },
@@ -155,7 +173,15 @@ const Api = {
 
     const contentType = response.headers.get("Content-Type") || "";
     if (contentType.includes("audio")) {
-      return { type: "audio", blob: await response.blob() };
+      // Текст реплики бота backend кладёт в заголовок X-Bot-Response (URL-encoded)
+      const rawText = response.headers.get("X-Bot-Response");
+      let text = "";
+      try {
+        text = rawText ? decodeURIComponent(rawText) : "";
+      } catch (_) {
+        /* битая кодировка — просто не показываем текст */
+      }
+      return { type: "audio", blob: await response.blob(), text };
     }
     return { type: "json", data: await response.json() };
   },

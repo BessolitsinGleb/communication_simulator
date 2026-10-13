@@ -1,0 +1,5 @@
+# Зависимости для тестов (pytest backend/tests). whisper/torch для тестов не нужны: распознавание мокается.
+pytest
+pytest-asyncio
+fakeredis[lua]
+aiosqlite

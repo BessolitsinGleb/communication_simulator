@@ -1,15 +1,13 @@
 fastapi[standard]
-openai
+httpx
 pydantic
 pydantic_settings
 sqlalchemy
-passlib
+passlib[argon2]
 python-jose
-asyncio
 uvicorn
 redis
 psycopg[binary]
 greenlet
-pyaudio
 openai-whisper
 edge-tts

@@ -20,6 +20,10 @@ class AuthService:
         if user:
             raise HTTPException(400, "Email уже существует")
 
+        # FIX: username в БД уникальный, но не проверялся. Повторное имя давало IntegrityError → 500.
+        if await self.user_repo.get_by_username(data.username):
+            raise HTTPException(400, "Имя пользователя уже занято")
+
         hashed_password = hash_password(data.password)
 
         new_user = await self.user_repo.create_user(

@@ -15,6 +15,12 @@ async def lifespan(app: FastAPI):
     
     app.state.redis = redis_client
     app.state.rate_limit_script = redis_client.register_script(SLIDING_WINDOW_LUA)
+
+    # FIX: создание таблиц перенесено сюда из @app.on_event("startup"). Когда у FastAPI задан lifespan,
+    # обработчики on_event("startup") НЕ вызываются, поэтому таблицы в БД не создавались.
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     yield  
     await redis_client.close()
 
@@ -26,15 +32,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # FIX: без expose_headers браузер не даёт JS прочитать кастомный заголовок X-Bot-Response
+    # (текст реплики бота в аудиодиалоге), и фронт не мог показать, что сказал собеседник.
+    expose_headers=["X-Bot-Response"],
 )
 app.include_router(auth_router)
 app.include_router(dialog_router)
 app.include_router(text_router)
 
-@app.on_event("startup")
-async def on_startup():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 """
 Хранеие данных для диалога:

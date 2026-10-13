@@ -177,6 +177,7 @@
       });
 
       if (result.type === 'audio') {
+        botLine.textContent = result.text || '';
         await playBotAudio(result.blob);
         state.isBusy = false;
         micBtn.disabled = false;
@@ -185,8 +186,20 @@
         return;
       }
 
-      // type === 'json' — сервер всегда завершает диалог этим ответом
       const data = result.data;
+
+      // FIX: раньше любой JSON-ответ считался завершением звонка. Но backend отвечает JSON и тогда, когда
+      // в записи не распознана речь ({status: "silence", end_call: false}), и звонок обрывался на ровном месте.
+      if (data.end_call !== true) {
+        state.isBusy = false;
+        micBtn.disabled = false;
+        setStatus('idle', 'Ваш ход');
+        callHint.textContent = data.status === 'silence'
+          ? 'Не удалось разобрать речь — скажите ещё раз'
+          : 'Нажмите на микрофон и начните говорить';
+        return;
+      }
+
       botLine.textContent = data.text_to_speak || '';
       endCall({
         title: data.status === 'timeout' ? 'Время вышло' : 'Звонок завершён',

@@ -1,5 +1,7 @@
-import openai
 from ..core.config import s
+# FIX: суммаризация шла через openai.chat.completions.create без ключа OpenAI и падала после 6 реплик.
+# Теперь используется тот же OpenRouter-клиент, что и для основных ответов.
+from .openrout_repos import send_to_ai
 from ..services.redis_service import RedisLiveMessages
 from redis import Redis
 
@@ -15,19 +17,22 @@ class SummarizedConversationMemory:
         self.history_key = f"chat:history:{user_id}"
         self.summary_key = f"chat:summary:{user_id}"
 
-    def add_message(self, role: str, text: str) -> None:
+    # FIX: метод стал async, потому что суммаризация делает сетевой запрос к LLM.
+    # Синхронный вызов блокировал бы event loop для всех пользователей.
+    async def add_message(self, role: str, text: str) -> None:
         """Добавляет новую реплику продавца или клиента в память."""
         deleted_turns = self.live_messages.append(role, text)
         if deleted_turns:
-            self._summarize_oldest_turns(messages_to_summary=deleted_turns)
+            await self._summarize_oldest_turns(messages_to_summary=deleted_turns)
 
-    def _summarize_oldest_turns(self, messages_to_summary: dict) -> None:
+    async def _summarize_oldest_turns(self, messages_to_summary: dict) -> None:
         """Берет самые старые реплики, объединяет с прошлым суммари и сжимает через LLM."""
         # Отрезаем первые 2 реплики (один круг диалога: продавец + клиент) для сжатия
         turns_to_summarize = messages_to_summary
         
         # Формируем текст для отправки на суммаризацию
-        dialogue_chunk = "\n".join([f"{m['replic']['role']}: {m['replic']['content']}" for m in turns_to_summarize])
+        # FIX: реплики хранятся как {"role", "content"}, ключа 'replic' нет → был KeyError.
+        dialogue_chunk = "\n".join([f"{m['role']}: {m['content']}" for m in turns_to_summarize])
         
         prompt = f"""
         У тебя есть предыдущее краткое содержание разговора и пара новых реплик.
@@ -41,12 +46,8 @@ class SummarizedConversationMemory:
         
         # Запрос к LLM для генерации нового суммари
         # В реальном коде используйте ваш клиент (openai, vllm, ollama и т.д.)
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini", # Для суммаризации отлично подойдет быстрая и дешевая модель
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        self.live_messages.save_summary(new_summary=response.choices[0].message.content.strip())
+        summary = await send_to_ai([{"role": "user", "content": prompt}])
+        self.live_messages.save_summary(new_summary=summary.strip())
 
     def get_messages_for_llm(self) -> list:
         """Собирает финальный пакет данных, который отправляется боту для генерации ответа."""
