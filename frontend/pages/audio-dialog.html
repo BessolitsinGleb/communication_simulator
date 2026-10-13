@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Голосовой звонок · Тренажёр общения с клиентом</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/audio-dialog.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <a class="nav__brand" href="home.html">
+      <span class="nav__brand-mark"></span>
+      Тренажёр общения
+    </a>
+    <div class="nav__links">
+      <a class="nav__link" href="home.html">На главную</a>
+    </div>
+  </nav>
+
+  <main class="audio-page">
+
+    <!-- ЭКРАН НАСТРОЕК -->
+    <section class="card audio-setup fade-in-on-scroll" id="setup-screen">
+      <h1>Настройка звонка</h1>
+      <p class="text-secondary">Выберите голос собеседника, сложность и длительность звонка.</p>
+
+      <div class="audio-setup__block">
+        <span class="field__label">Голос собеседника</span>
+        <div class="segmented" id="voice-picker" role="group" aria-label="Голос собеседника">
+          <button class="segmented__option" data-value="woman" aria-pressed="true">Женский</button>
+          <button class="segmented__option" data-value="man" aria-pressed="false">Мужской</button>
+        </div>
+      </div>
+
+      <div class="audio-setup__block">
+        <span class="field__label">Сложность собеседника</span>
+        <div class="segmented" id="level-picker" role="group" aria-label="Сложность">
+          <button class="segmented__option" data-value="easy" aria-pressed="true">Лёгкая</button>
+          <button class="segmented__option" data-value="normal" aria-pressed="false">Средняя</button>
+          <button class="segmented__option" data-value="hard" aria-pressed="false">Сложная</button>
+        </div>
+      </div>
+
+      <div class="audio-setup__block">
+        <span class="field__label">Длительность звонка</span>
+        <div class="segmented" id="mode-picker" role="group" aria-label="Длительность звонка">
+          <button class="segmented__option" data-value="easy" aria-pressed="true">Короткая</button>
+          <button class="segmented__option" data-value="norm" aria-pressed="false">Средняя</button>
+          <button class="segmented__option" data-value="hard" aria-pressed="false">Длинная</button>
+        </div>
+      </div>
+
+      <p class="field__error" id="setup-error" role="alert"></p>
+      <button class="btn btn--primary btn--block audio-setup__call-btn" id="start-call-btn">
+        Позвонить
+      </button>
+    </section>
+
+    <!-- ЭКРАН ЗВОНКА -->
+    <section class="audio-call" id="call-screen" hidden>
+      <div class="audio-call__avatar glow-green" id="call-avatar"></div>
+      <h2 class="audio-call__status" id="call-status">Соединение…</h2>
+      <p class="audio-call__timer tabular-nums" id="call-timer">00:00</p>
+
+      <p class="audio-call__bot-line" id="bot-line" aria-live="polite"></p>
+
+      <div class="audio-call__controls">
+        <button class="btn btn--icon audio-call__mic" id="mic-btn" disabled aria-pressed="false" aria-label="Говорить">
+          <span class="audio-call__mic-dot"></span>
+        </button>
+        <button class="btn btn--icon audio-call__hangup" id="hangup-btn" aria-label="Завершить звонок">
+          <span class="audio-call__hangup-icon"></span>
+        </button>
+      </div>
+
+      <p class="audio-call__hint text-muted" id="call-hint">Нажмите на микрофон и начните говорить</p>
+    </section>
+
+    <!-- ЭКРАН ЗАВЕРШЕНИЯ -->
+    <section class="card audio-end fade-in-on-scroll" id="end-screen" hidden>
+      <h1 id="end-title">Звонок завершён</h1>
+      <p class="text-secondary" id="end-message"></p>
+      <div class="audio-end__actions">
+        <button class="btn btn--ghost" id="end-restart-btn">Новый звонок</button>
+        <a class="btn btn--primary" href="home.html">На главную</a>
+      </div>
+    </section>
+
+    <audio id="bot-audio" class="visually-hidden"></audio>
+
+  </main>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/audio-dialog.js"></script>
+</body>
+</html>

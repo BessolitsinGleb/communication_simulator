@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Текстовый диалог · Тренажёр общения с клиентом</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/text-dialog.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <a class="nav__brand" href="home.html">
+      <span class="nav__brand-mark"></span>
+      Тренажёр общения
+    </a>
+    <div class="nav__links">
+      <a class="nav__link" href="home.html">На главную</a>
+    </div>
+  </nav>
+
+  <main class="text-page">
+
+    <!-- ЭКРАН НАСТРОЕК -->
+    <section class="card text-setup fade-in-on-scroll" id="setup-screen">
+      <h1>Настройка диалога</h1>
+      <p class="text-secondary">Выберите сложность собеседника и лимит времени на переписку.</p>
+
+      <div class="text-setup__block">
+        <span class="field__label">Сложность собеседника</span>
+        <div class="segmented" id="level-picker" role="group" aria-label="Сложность">
+          <button class="segmented__option" data-value="easy" aria-pressed="true">Лёгкая</button>
+          <button class="segmented__option" data-value="normal" aria-pressed="false">Средняя</button>
+          <button class="segmented__option" data-value="hard" aria-pressed="false">Сложная</button>
+        </div>
+      </div>
+
+      <div class="text-setup__block">
+        <span class="field__label">Лимит времени диалога</span>
+        <div class="segmented" id="mode-picker" role="group" aria-label="Лимит времени">
+          <button class="segmented__option" data-value="easy" aria-pressed="true">Короткий</button>
+          <button class="segmented__option" data-value="norm" aria-pressed="false">Средний</button>
+          <button class="segmented__option" data-value="hard" aria-pressed="false">Длинный</button>
+        </div>
+      </div>
+
+      <p class="field__error" id="setup-error" role="alert"></p>
+      <button class="btn btn--primary btn--block" id="start-chat-btn">Начать диалог</button>
+    </section>
+
+    <!-- ЭКРАН ЧАТА -->
+    <section class="text-chat" id="chat-screen" hidden>
+      <div class="text-chat__topbar">
+        <button class="btn btn--danger" id="close-chat-btn">Завершить диалог</button>
+      </div>
+
+      <header class="text-chat__header card card--flat">
+        <div class="avatar">К</div>
+        <div class="text-chat__header-info">
+          <h2>Клиент</h2>
+          <span class="text-chat__online"><span class="status-dot status-dot--online"></span>Онлайн</span>
+        </div>
+      </header>
+
+      <div class="text-chat__messages" id="messages" aria-live="polite"></div>
+
+      <form class="text-chat__composer" id="composer">
+        <input
+          class="input text-chat__input"
+          id="message-input"
+          type="text"
+          placeholder="Введите сообщение…"
+          autocomplete="off"
+          required
+        />
+        <button class="btn btn--primary" id="send-btn" type="submit">Отправить</button>
+      </form>
+    </section>
+
+    <!-- ЭКРАН ЗАВЕРШЕНИЯ -->
+    <section class="card text-end fade-in-on-scroll" id="end-screen" hidden>
+      <h1 id="end-title">Диалог завершён</h1>
+      <p class="text-secondary" id="end-message"></p>
+      <div class="text-end__actions">
+        <button class="btn btn--ghost" id="end-restart-btn">Новый диалог</button>
+        <a class="btn btn--primary" href="home.html">На главную</a>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/text-dialog.js"></script>
+</body>
+</html>

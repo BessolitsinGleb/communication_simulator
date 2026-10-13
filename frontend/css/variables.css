@@ -1,0 +1,86 @@
+/*
+  variables.css
+  Единая система токенов дизайна. Все остальные CSS-файлы используют
+  только эти переменные — не хардкодят цвета/радиусы напрямую.
+*/
+
+:root {
+  /* --- Цвета: фон / поверхности / акцент (по ТЗ) --- */
+  --color-bg: #24292E;
+  --color-bg-elevated: #2A3036;
+
+  --color-surface: #2B5B3F;
+  --color-surface-light: #356B4C;
+  --color-surface-lighter: #3E8059;
+
+  --color-accent: #F3E2A5;
+  --color-accent-dim: #DFCB8E;
+  --color-accent-strong: #F8EDC2;
+
+  --color-text-primary: #F3F5F3;
+  --color-text-secondary: #A7B3AC;
+  --color-text-muted: #737E78;
+  --color-text-on-accent: #23281F;
+  --color-text-on-surface: #EFF3EF;
+
+  --color-border: rgba(226, 232, 227, 0.10);
+  --color-border-strong: rgba(226, 232, 227, 0.18);
+  --color-border-accent: rgba(243, 226, 165, 0.45);
+
+  --color-danger: #E0796B;
+  --color-success: #8FD9A8;
+  --color-online: #7FE3A3;
+
+  /* --- Скругления --- */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --radius-xs: 6px;
+  --radius-pill: 999px;
+
+  /* --- Тени / свечения --- */
+  --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.30);
+  --shadow-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --glow-gold: 0 0 0 1px var(--color-border-accent), 0 0 20px rgba(243, 226, 165, 0.28);
+  --glow-gold-hover: 0 0 0 1px rgba(243, 226, 165, 0.65), 0 0 26px rgba(243, 226, 165, 0.42);
+  --glow-green: 0 0 24px rgba(62, 128, 89, 0.35);
+
+  /* --- Типографика --- */
+  --font-display: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.25rem;
+
+  /* --- Отступы --- */
+  --space-3xs: 4px;
+  --space-2xs: 8px;
+  --space-xs: 12px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 32px;
+  --space-xl: 48px;
+
+  /* --- Переходы --- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 140ms;
+  --t-base: 220ms;
+  --t-chart: 300ms;
+
+  /* --- Слои --- */
+  --z-nav: 100;
+  --z-overlay: 200;
+  --z-toast: 300;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0ms;
+    --t-base: 0ms;
+    --t-chart: 0ms;
+  }
+}

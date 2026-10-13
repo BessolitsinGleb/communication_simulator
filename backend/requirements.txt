@@ -1,0 +1,15 @@
+fastapi[standard]
+openai
+pydantic
+pydantic_settings
+sqlalchemy
+passlib
+python-jose
+asyncio
+uvicorn
+redis
+psycopg[binary]
+greenlet
+pyaudio
+openai-whisper
+edge-tts

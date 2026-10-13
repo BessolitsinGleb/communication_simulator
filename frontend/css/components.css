@@ -1,0 +1,328 @@
+/*
+  components.css
+  Переиспользуемые компоненты интерфейса. Подключается на каждой странице
+  вместе с variables.css и base.css.
+*/
+
+/* ================= Layout helpers ================= */
+
+.bento-grid {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card), var(--shadow-card-inset);
+  padding: var(--space-md);
+}
+
+.card--flat {
+  background: var(--color-bg-elevated);
+}
+
+.card--tight {
+  padding: var(--space-sm);
+}
+
+/* ================= Buttons ================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 22px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease-standard),
+              box-shadow var(--t-fast) var(--ease-standard),
+              background var(--t-fast) var(--ease-standard),
+              opacity var(--t-fast) var(--ease-standard);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled,
+.btn.is-loading {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn--primary {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  box-shadow: var(--glow-gold);
+}
+.btn--primary:hover {
+  background: var(--color-accent-strong);
+  box-shadow: var(--glow-gold-hover);
+  transform: scale(1.02);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+}
+.btn--ghost:hover {
+  border-color: var(--color-border-accent);
+  color: var(--color-accent);
+}
+
+.btn--danger {
+  background: transparent;
+  color: var(--color-danger);
+  border: 1px solid rgba(224, 121, 107, 0.4);
+}
+.btn--danger:hover {
+  background: rgba(224, 121, 107, 0.12);
+  border-color: var(--color-danger);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn--icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--radius-pill);
+}
+
+/* ================= Fields / Inputs ================= */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  margin-bottom: var(--space-sm);
+}
+
+.field__label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+}
+
+.input,
+.select {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  padding: 12px 14px;
+  transition: border-color var(--t-fast) var(--ease-standard),
+              box-shadow var(--t-fast) var(--ease-standard);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(243, 226, 165, 0.14);
+}
+
+.field__error {
+  min-height: 18px;
+  font-size: var(--fs-xs);
+  color: var(--color-danger);
+}
+
+/* Сегментированный выбор (уровень сложности / режим) */
+.segmented {
+  display: inline-flex;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  gap: 4px;
+}
+
+.segmented__option {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  padding: 8px 16px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-standard),
+              color var(--t-fast) var(--ease-standard);
+}
+
+.segmented__option[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+/* ================= Navigation (стекломорфизм) ================= */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(43, 91, 63, 0.55);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.nav__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  color: var(--color-text-primary);
+}
+
+.nav__brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-xs);
+  background: var(--color-accent);
+  box-shadow: var(--glow-gold);
+}
+
+.nav__links {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.nav__link {
+  position: relative;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+
+.nav__link::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-accent);
+  transition: width var(--t-base) var(--ease-standard),
+              left var(--t-base) var(--ease-standard);
+}
+
+.nav__link:hover {
+  color: var(--color-text-primary);
+}
+
+.nav__link:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+/* ================= Avatar / статус ================= */
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--color-surface-lighter), var(--color-surface));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  box-shadow: 0 0 0 3px var(--color-bg);
+}
+
+.status-dot--online {
+  background: var(--color-online);
+  box-shadow: 0 0 0 3px var(--color-bg), 0 0 8px rgba(127, 227, 163, 0.7);
+}
+
+/* ================= Toasts ================= */
+
+.toast-container {
+  position: fixed;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.toast {
+  min-width: 240px;
+  max-width: 320px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-primary);
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-card);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity var(--t-base) var(--ease-standard),
+              transform var(--t-base) var(--ease-standard);
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast--error {
+  border-color: rgba(224, 121, 107, 0.5);
+}
+
+.toast--success {
+  border-color: rgba(143, 217, 168, 0.5);
+}
+
+/* ================= Прочее ================= */
+
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  border: none;
+  margin: var(--space-sm) 0;
+}
+
+.glow-gold { box-shadow: var(--glow-gold); }
+.glow-green { box-shadow: var(--glow-green); }
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

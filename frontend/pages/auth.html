@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Вход · Тренажёр общения с клиентом</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
+<body>
+
+  <main class="auth">
+    <section class="auth__brand fade-in-on-scroll">
+      <div class="auth__brand-mark"></div>
+      <h1 class="auth__brand-title">Тренажёр общения<br />с клиентом</h1>
+      <p class="auth__brand-text">
+        Отрабатывайте переговоры в голосовом звонке или текстовом чате
+        с виртуальным клиентом — от простого сценария до сложного возражения.
+      </p>
+      <ul class="auth__brand-points">
+        <li>Аудио- и текстовые сессии диалога</li>
+        <li>Три уровня сложности собеседника</li>
+        <li>История и разбор каждой сессии</li>
+      </ul>
+    </section>
+
+    <section class="auth__panel card fade-in-on-scroll">
+
+      <div class="segmented auth__tabs" role="tablist" aria-label="Способ входа">
+        <button class="segmented__option" id="tab-login" role="tab" aria-pressed="true">Вход</button>
+        <button class="segmented__option" id="tab-register" role="tab" aria-pressed="false">Регистрация</button>
+      </div>
+
+      <!-- ЛОГИН -->
+      <form id="form-login" class="auth__form" novalidate>
+        <div class="field">
+          <label class="field__label" for="login-email">Email</label>
+          <input class="input" type="email" id="login-email" name="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label class="field__label" for="login-password">Пароль</label>
+          <input class="input" type="password" id="login-password" name="password" autocomplete="current-password" required />
+        </div>
+        <p class="field__error" id="login-error" role="alert"></p>
+        <button type="submit" class="btn btn--primary btn--block" id="login-submit">Войти</button>
+      </form>
+
+      <!-- РЕГИСТРАЦИЯ -->
+      <form id="form-register" class="auth__form" novalidate hidden>
+        <div class="field">
+          <label class="field__label" for="reg-username">Имя пользователя</label>
+          <input class="input" type="text" id="reg-username" name="username" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-email">Email</label>
+          <input class="input" type="email" id="reg-email" name="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-password">Пароль</label>
+          <input class="input" type="password" id="reg-password" name="password" autocomplete="new-password" required minlength="6" />
+        </div>
+        <p class="field__error" id="register-error" role="alert"></p>
+        <button type="submit" class="btn btn--primary btn--block" id="register-submit">Создать аккаунт</button>
+      </form>
+
+      <!-- ПОДТВЕРЖДЕНИЕ EMAIL -->
+      <form id="form-verify" class="auth__form" novalidate hidden>
+        <p class="auth__verify-hint">
+          Код отправлен на <strong id="verify-email-display"></strong>. Введите его, чтобы подтвердить почту —
+          вход выполнится автоматически.
+        </p>
+        <div class="field">
+          <label class="field__label" for="verify-code">Код подтверждения</label>
+          <input class="input" type="text" id="verify-code" name="code" inputmode="numeric" autocomplete="one-time-code" required />
+        </div>
+        <p class="field__error" id="verify-error" role="alert"></p>
+        <button type="submit" class="btn btn--primary btn--block" id="verify-submit">Подтвердить</button>
+        <button type="button" class="btn btn--ghost btn--block" id="resend-code">Отправить код ещё раз</button>
+      </form>
+
+    </section>
+  </main>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/auth.js"></script>
+</body>
+</html>

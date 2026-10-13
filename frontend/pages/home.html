@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Главная · Тренажёр общения с клиентом</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/home.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav__brand">
+      <span class="nav__brand-mark"></span>
+      Тренажёр общения
+    </div>
+    <div class="nav__links">
+      <button class="btn btn--ghost" id="logout-btn">Выйти</button>
+    </div>
+  </nav>
+
+  <main class="home">
+
+    <!-- Карточка пользователя: заполняется через /reg/me -->
+    <section class="card home__profile fade-in-on-scroll" id="profile-card">
+      <div class="home__profile-avatar">
+        <div class="avatar skeleton" id="profile-avatar" aria-hidden="true"></div>
+      </div>
+      <div class="home__profile-info">
+        <div class="skeleton home__skeleton-line home__skeleton-line--title" id="profile-name-skeleton"></div>
+        <div class="skeleton home__skeleton-line home__skeleton-line--sub" id="profile-email-skeleton"></div>
+        <div class="home__profile-details" id="profile-details" hidden>
+          <h2 id="profile-username"></h2>
+          <p id="profile-email"></p>
+          <span class="home__profile-id text-muted tabular-nums" id="profile-id"></span>
+        </div>
+      </div>
+    </section>
+
+    <h1 class="home__section-title fade-in-on-scroll">Выберите формат тренировки</h1>
+
+    <section class="bento-grid home__actions">
+      <article class="card home__action fade-in-on-scroll">
+        <div class="home__action-icon home__action-icon--audio" aria-hidden="true"></div>
+        <h3>Голосовой звонок</h3>
+        <p>
+          Живой диалог с клиентом голосом: выберите сложность и таймер,
+          затем ведите переговоры как настоящий звонок.
+        </p>
+        <a class="btn btn--primary" href="audio-dialog.html">Начать звонок</a>
+      </article>
+
+      <article class="card home__action fade-in-on-scroll">
+        <div class="home__action-icon home__action-icon--text" aria-hidden="true"></div>
+        <h3>Текстовый диалог</h3>
+        <p>
+          Переписка с клиентом в формате мессенджера — удобно отрабатывать
+          формулировки и структуру ответа без спешки.
+        </p>
+        <a class="btn btn--primary" href="text-dialog.html">Открыть чат</a>
+      </article>
+    </section>
+
+  </main>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+/*
+  auth.css — стили страницы входа/регистрации
+*/
+
+.auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: stretch;
+}
+
+.auth__brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl) var(--space-xl);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(243, 226, 165, 0.06), transparent 45%),
+    var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+
+.auth__brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  box-shadow: var(--glow-gold);
+}
+
+.auth__brand-title {
+  font-size: var(--fs-2xl);
+  max-width: 12ch;
+}
+
+.auth__brand-text {
+  max-width: 42ch;
+  font-size: var(--fs-md);
+}
+
+.auth__brand-points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
+}
+
+.auth__brand-points li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.auth__brand-points li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+.auth__panel {
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  max-width: 380px;
+  margin: var(--space-xl);
+  padding: var(--space-lg);
+}
+
+.auth__tabs {
+  width: 100%;
+  margin-bottom: var(--space-md);
+}
+
+.auth__tabs .segmented__option {
+  flex: 1;
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth__form .btn {
+  margin-top: var(--space-2xs);
+}
+
+.auth__form #resend-code {
+  margin-top: var(--space-2xs);
+}
+
+.auth__verify-hint {
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.auth__verify-hint strong {
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 860px) {
+  .auth {
+    grid-template-columns: 1fr;
+  }
+  .auth__brand {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-lg);
+  }
+  .auth__panel {
+    margin: var(--space-lg);
+  }
+}

@@ -1,0 +1,171 @@
+/*
+  audio-dialog.css — стили страницы голосового звонка
+*/
+
+.audio-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-lg) var(--space-xl);
+  min-height: calc(100vh - 73px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Экран настроек ---------- */
+
+.audio-setup {
+  width: 100%;
+}
+
+.audio-setup h1 {
+  font-size: var(--fs-xl);
+  margin-bottom: var(--space-3xs);
+}
+
+.audio-setup > p.text-secondary {
+  margin-bottom: var(--space-md);
+}
+
+.audio-setup__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin-bottom: var(--space-md);
+}
+
+.audio-setup__block .segmented {
+  width: 100%;
+}
+
+.audio-setup__block .segmented__option {
+  flex: 1;
+}
+
+.audio-setup__call-btn {
+  margin-top: var(--space-sm);
+}
+
+/* ---------- Экран звонка ---------- */
+
+.audio-call {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2xs);
+}
+
+.audio-call__avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, var(--color-surface-lighter), var(--color-surface));
+  border: 1px solid var(--color-border-strong);
+  margin-bottom: var(--space-sm);
+  transition: box-shadow var(--t-base) var(--ease-standard);
+}
+
+.audio-call__avatar.is-active {
+  animation: call-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes call-pulse {
+  0%, 100% { box-shadow: var(--glow-green); }
+  50% { box-shadow: 0 0 40px rgba(62, 128, 89, 0.6); }
+}
+
+.audio-call__status {
+  font-size: var(--fs-lg);
+}
+
+.audio-call__timer {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.audio-call__bot-line {
+  min-height: 44px;
+  max-width: 46ch;
+  color: var(--color-text-primary);
+  font-size: var(--fs-md);
+  margin-bottom: var(--space-md);
+}
+
+.audio-call__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.audio-call__mic,
+.audio-call__hangup {
+  width: 68px;
+  height: 68px;
+  position: relative;
+}
+
+.audio-call__mic {
+  background: var(--color-accent);
+  box-shadow: var(--glow-gold);
+}
+.audio-call__mic:hover:not(:disabled) {
+  box-shadow: var(--glow-gold-hover);
+  transform: scale(1.02);
+}
+.audio-call__mic[aria-pressed="true"] {
+  background: var(--color-danger);
+  box-shadow: 0 0 20px rgba(224, 121, 107, 0.4);
+}
+
+.audio-call__mic-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-xs);
+  background: var(--color-text-on-accent);
+  margin: 0 auto;
+}
+
+.audio-call__hangup {
+  background: var(--color-danger);
+}
+.audio-call__hangup:hover {
+  background: #e88c80;
+  transform: scale(1.02);
+}
+
+.audio-call__hangup-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-text-primary);
+  margin: 0 auto;
+}
+
+.audio-call__hint {
+  margin-top: var(--space-sm);
+  font-size: var(--fs-xs);
+}
+
+/* ---------- Экран завершения ---------- */
+
+.audio-end {
+  width: 100%;
+  text-align: center;
+}
+
+.audio-end h1 {
+  font-size: var(--fs-xl);
+  margin-bottom: var(--space-2xs);
+}
+
+.audio-end__actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}

@@ -1,0 +1,124 @@
+/*
+  home.css — стили главной страницы
+*/
+
+.home {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-lg) var(--space-xl);
+}
+
+/* --- Карточка профиля --- */
+
+.home__profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.home__profile-avatar .avatar {
+  font-size: var(--fs-lg);
+  width: 56px;
+  height: 56px;
+}
+
+.home__profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.home__skeleton-line {
+  height: 16px;
+  margin-bottom: 8px;
+}
+.home__skeleton-line--title {
+  width: 160px;
+  height: 20px;
+}
+.home__skeleton-line--sub {
+  width: 220px;
+}
+
+.home__profile-details h2 {
+  font-size: var(--fs-lg);
+  margin-bottom: 2px;
+}
+
+.home__profile-details p {
+  font-size: var(--fs-sm);
+  margin-bottom: 2px;
+}
+
+.home__profile-id {
+  font-size: var(--fs-xs);
+}
+
+/* --- Заголовок секции --- */
+
+.home__section-title {
+  font-size: var(--fs-xl);
+  margin: var(--space-md) 0 var(--space-md);
+}
+
+/* --- Действия (bento) --- */
+
+.home__actions {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.home__action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+}
+
+.home__action h3 {
+  font-size: var(--fs-lg);
+  margin-top: var(--space-2xs);
+}
+
+.home__action p {
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.home__action .btn {
+  margin-top: auto;
+}
+
+.home__action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-lighter);
+  box-shadow: var(--glow-green);
+  position: relative;
+}
+
+.home__action-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: var(--color-accent);
+}
+
+.home__action-icon--audio::before {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+.home__action-icon--text::before {
+  width: 22px;
+  height: 16px;
+  border-radius: var(--radius-xs);
+}
+
+@media (max-width: 720px) {
+  .home__actions {
+    grid-template-columns: 1fr;
+  }
+}
